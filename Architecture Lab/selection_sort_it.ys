@@ -1,0 +1,109 @@
+# Name:	Abdul Rafey KHAN
+# ID:	2650158
+.pos 0x0
+	irmovq stack, %rsp
+	irmovq head, %rdi
+	call selection_sort_it
+	halt
+	
+selection_sort_it:
+	mrmovq	8(%rdi), %rcx
+	andq	%rcx, %rcx
+	je		RetHead
+	irmovq	$0, %rax
+	jmp		outertest
+
+outerloop:
+	rrmovq	%rdi, %r8
+	irmovq	$0, %r9
+	rrmovq	%rdi, %r10
+	irmovq	$0, %r11
+	jmp		innertest
+
+innerloop:
+	mrmovq (%r10), %rcx
+	mrmovq (%r8), %rdx
+	subq	%rdx, %rcx
+	jle		D1
+	rrmovq	%r10, %r8
+	rrmovq	%r11, %r9
+
+D1:
+	rrmovq	%r10, %r11
+	mrmovq	8(%r10), %r10
+
+innertest:
+	andq	%r10, %r10
+	jne		innerloop
+	rrmovq	%r8, %rcx
+	subq	%rdi, %rcx
+	jne		E2
+	mrmovq	8(%rdi), %rdi
+	jmp		D2
+
+E2:
+	mrmovq 8(%r8), %rdx
+	rmmovq %rdx, 8(%r9)
+
+D2:
+	rmmovq %rax, 8(%r8)
+	rrmovq %r8, %rax
+
+outertest:
+	andq	%rdi, %rdi
+	jne		outerloop
+	ret
+
+RetHead:
+	rrmovq %rdi, %rax
+	ret
+	
+	
+.pos 0x200
+head:
+.quad 17
+.quad node1
+
+node1:
+.quad 24
+.quad node2
+
+node2:
+.quad 6
+.quad node3
+
+node3:
+.quad 11
+.quad node4
+
+node4:
+.quad 4
+.quad node5
+
+node5:
+.quad 5
+.quad node6
+
+node6:
+.quad 3
+.quad node7
+
+node7:
+.quad 40
+.quad node8
+
+node8:
+.quad 19
+.quad node9
+
+node9:
+.quad 52
+.quad node10
+
+node10:
+.quad 8
+.quad 0 # Remember that 0 is null.
+	
+.pos 0x1f00
+stack:
+

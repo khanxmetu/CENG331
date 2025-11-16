@@ -1,0 +1,466 @@
+# Name: Abdul Rafey Khan
+# ID: 2650158
+# I have written the assembly based on my following C code. The major changes are described below the code.
+# word_t to_binary_string(word_t *arr, unsigned char **buff, word_t len)
+# {
+#     word_t sum = 0;
+#     word_t val;
+#     // outerloop is not unrolled here in the C code for clarity.
+#     goto LoopTest;
+
+#     Loop:
+#     val = *arr;
+#     arr++;
+#     sum += val;
+#     unsigned char * temp = buff;
+#     // innerloop completely unrolled 8x1
+#     if (val & 128)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 64)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 32)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 16)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 8)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 4)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 2)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+#     if (val & 1)
+#         *temp = '1';
+#     else
+#         *temp = '0';
+#     temp++;
+
+#     Updates:
+#     buff++;
+#     len--;
+
+#     LoopTest:
+#     if(len>0) goto Loop;
+
+#     Done:
+#     return sum;
+# }
+
+
+#/* $begin to_binary_string-ys */
+##################################################################
+# to_binary_string.ys - Convert an arr block of len integers to 
+# binary strings and store in buff
+# Return the sum of integers contained in arr.
+# Include your name and ID here.
+# Name: Abdul Rafey Khan
+# ID: 2650158
+# Describe how and why you modified the baseline code.
+# Note: The C code for the modified algorithm is added at the top of the source file to_binary_string.ys for reference.
+# Modifications #
+# 1) Modified the algorithm to use the condition (val & pow != 0) to determine whether i-th bit is set.
+#     Reason: To get rid of subtract statement
+# 2) Modified the algorithm to completely unroll innerloop to 8x1 and use fixed pow values.
+#     Reason: To get rid of loop overhead i.e shift right statement
+# 3) In assembly code, I used a custom cmpq operator defined as follows:
+#      cmpq rA, rB:
+#          if R[rA] == 0:    M[R[rB]] = '0'
+#          if R[rA] != 0:    M[R[rB]] = '1'
+#    Reason: Combines checking for truthness of R[rA] and saving the corresponding character into memory in a single instruction.
+# 4) The branches are organized in a way that conditional jumps specify the most likely branch.
+#    Reason: To facilitate branch prediction.
+
+# The average CPE obtained with above changes was 41.41
+
+# 5) An additional change was made to the above algorithm where outerloop was unrolled to 5x1.
+#    Reason: To get rid of loop overhead.
+#            The average CPE was reduced from 41.41 to 40.5
+
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = arr, %rsi = buff, %rdx = len
+to_binary_string:
+##################################################################
+# You can modify this portion
+    # Loop header
+    irmovq $1, %r13        #  1
+    irmovq $5, %r12        #  5
+    irmovq $8, %r8         #  8
+    irmovq $16, %r11       #  16
+    irmovq $24, %rbx       #  24
+    irmovq $32, %rcx       #  32
+    irmovq $40, %rbp       #  40
+    xorq %rax,%rax    	     # sum = 0;
+
+    jmp LoopTest
+Loop:
+# di=0    
+    mrmovq (%rdi), %r9      # read val from arr+di...
+    addq %r9, %rax          # sum += val
+    rrmovq %rsi, %r10       # temp = buff
+
+    irmovq $128, %r14      # pow=128
+    andq %r9, %r14         # prod = val & pow
+    cmpq %r14, %r10        # if(prod!=0) M[R[%r10]] = '1' else M[R[%r10]] = '0'
+    addq %r13, %r10        # temp++
+
+
+    irmovq $64, %r14      # pow=64
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $32, %r14      # pow=32
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $16, %r14      # pow=16
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $8, %r14      # pow=8
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $4, %r14      # pow=4
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $2, %r14      # pow=2
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $1, %r14      # pow=1
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+# di=1
+    mrmovq 8(%rdi), %r9      # read val from arr+di...
+    addq %r9, %rax          # sum += val
+    rrmovq %rsi, %r10       
+    addq %r8, %r10          # temp = buff+1 ptr to string
+
+    irmovq $128, %r14      # pow=128
+    andq %r9, %r14         # tmp = tmp & pow
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $64, %r14      # pow=64
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $32, %r14      # pow=32
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $16, %r14      # pow=16
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $8, %r14      # pow=8
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $4, %r14      # pow=4
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $2, %r14      # pow=2
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $1, %r14      # pow=1
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+# di=2
+    mrmovq 16(%rdi), %r9      # read val from arr+di...
+    addq %r9, %rax          # sum += val
+    rrmovq %rsi, %r10       
+    addq %r11, %r10          # temp = buff+2 ptr to string
+
+    irmovq $128, %r14      # pow=128
+    andq %r9, %r14         # tmp = tmp & pow
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $64, %r14      # pow=64
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $32, %r14      # pow=32
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $16, %r14      # pow=16
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $8, %r14      # pow=8
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $4, %r14      # pow=4
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $2, %r14      # pow=2
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $1, %r14      # pow=1
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+# di=3
+    mrmovq 24(%rdi), %r9      # read val from arr+di...
+    addq %r9, %rax          # sum += val
+    rrmovq %rsi, %r10       
+    addq %rbx, %r10          # temp = buff+3 ptr to string
+
+    irmovq $128, %r14      # pow=128
+    andq %r9, %r14         # tmp = tmp & pow
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $64, %r14      # pow=64
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $32, %r14      # pow=32
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $16, %r14      # pow=16
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $8, %r14      # pow=8
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $4, %r14      # pow=4
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $2, %r14      # pow=2
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $1, %r14      # pow=1
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+# di=4
+    mrmovq 32(%rdi), %r9      # read val from arr+di...
+    addq %r9, %rax          # sum += val
+    rrmovq %rsi, %r10       
+    addq %rcx, %r10          # temp = buff+4 ptr to string
+
+    irmovq $128, %r14      # pow=128
+    andq %r9, %r14         # tmp = tmp & pow
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $64, %r14      # pow=64
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $32, %r14      # pow=32
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $16, %r14      # pow=16
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $8, %r14      # pow=8
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $4, %r14      # pow=4
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $2, %r14      # pow=2
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $1, %r14      # pow=1
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+updates:
+    addq %rbp, %rdi          # arr+=5 increment array pointer by 5 elems
+    subq %r12, %rdx    	     # len-=5 decrese len by 5
+    addq %rbp, %rsi    	     # buff+=5 increment buff string pointer by 5 elems
+
+LoopTest:
+    rrmovq %rdx, %r14
+    subq %r12, %r14
+    jge Loop
+
+jmp RestLoopTest
+RestLoop:    
+    mrmovq (%rdi), %r9      # read val from arr...
+    addq %r8, %rdi          # arr++
+    addq %r9, %rax          # sum += val
+    rrmovq %rsi, %r10       # temp = buff
+
+    irmovq $128, %r14      # pow=128
+    andq %r9, %r14         # tmp = tmp & pow
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $64, %r14      # pow=64
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $32, %r14      # pow=32
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $16, %r14      # pow=16
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $8, %r14      # pow=8
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $4, %r14      # pow=4
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $2, %r14      # pow=2
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+    irmovq $1, %r14      # pow=1
+    andq %r9, %r14
+    cmpq %r14, %r10
+    addq %r13, %r10        # temp++
+
+
+Restupdates:
+    subq %r13, %rdx    	     # len--
+    addq %r8, %rsi    	     # buff++
+
+RestLoopTest:
+    andq %rdx, %rdx
+    jne RestLoop
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+    ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end to_binary_string-ys */
